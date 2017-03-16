@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { MimeType } from './MimeType';
 
 type Handler = (request: Request, res: http.ServerResponse) => Promise<boolean>;
-type ErrorHandler = (err: Error, request: Request, res: http.ServerResponse) => Promise<boolean>;
+type ErrorHandler = (err: Error, request?: Request, res?: http.ServerResponse) => Promise<boolean>;
 type Rule = { pathname: RegExp, handler?: Handler };
 
 export class App {
@@ -36,7 +36,7 @@ export class App {
     async listen(port = 3000) {
         this.port = port;
         http.createServer(async (req, res) => {
-            let request = null;
+            let request: Request = null;
             try {
                 if (req.method == 'POST') {
                     let postData = '';
@@ -71,6 +71,7 @@ export class App {
                 }
             }
             if (!res.finished) {
+                console.log('request has not end yet: ' + request.pathname);
                 res.end();
             }
         }).listen(this.port);
