@@ -2,6 +2,7 @@ import * as http from 'http';
 import { Request } from './Request';
 import * as fs from 'fs';
 import { MimeType } from './MimeType';
+import { Async } from './Async';
 
 type Handler = (request: Request, res: http.ServerResponse) => Promise<boolean>;
 type ErrorHandler = (err: Error, request?: Request, res?: http.ServerResponse) => Promise<boolean>;
@@ -39,20 +40,15 @@ export class App {
             let request: Request = null;
             try {
                 if (req.method == 'POST') {
-                    let postData = '';
-                    req.on('data', (chunk) => {
-                        postData += chunk;
-                    });
+                    let postData: string = await Async.waitPostData(req);
                     request = new Request(req, postData);
-                    req.on('end', async () => {
-                        for (let rule of this.postRules) {
-                            if (rule.pathname.test(req.url)) {
-                                if (!await rule.handler(request, res)) {
-                                    break;
-                                }
+                    for (let rule of this.postRules) {
+                        if (rule.pathname.test(req.url)) {
+                            if (!await rule.handler(request, res)) {
+                                break;
                             }
                         }
-                    });
+                    }
                 } else {
                     request = new Request(req);
                     for (let rule of this.getRules) {
