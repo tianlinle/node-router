@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 export class MimeType {
     static extensionMap: { [index: string]: string } = {
         "123": "application/vnd.lotus-1-2-3",
@@ -1050,6 +1052,13 @@ export class MimeType {
     };
 
     static getMimeTypeByExtension(extension: string): string {
+        if (extension.length > 0 && extension[0] == '.') {
+            extension = extension.substr(1);
+        }
         return this.extensionMap[extension];
+    }
+
+    static getMimeTypeOfFile(filename: string): string {
+        return this.getMimeTypeByExtension(path.extname(filename));
     }
 }

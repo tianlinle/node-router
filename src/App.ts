@@ -3,9 +3,10 @@ import { Request } from './Request';
 import * as fs from 'fs';
 import { MimeType } from './MimeType';
 import { Async } from './Async';
+import * as querystring from 'querystring';
 
 type Handler = (request: Request, res: http.ServerResponse) => Promise<boolean>;
-type ErrorHandler = (err: Error, request?: Request, res?: http.ServerResponse) => Promise<boolean>;
+type ErrorHandler = (err: Error, req?: http.IncomingMessage, res?: http.ServerResponse, request?: Request) => Promise<boolean>;
 type Rule = { pathname: RegExp, handler?: Handler };
 
 export class App {
@@ -39,9 +40,9 @@ export class App {
         http.createServer(async (req, res) => {
             let request: Request = null;
             try {
+                let body = await this.waitPostData(req);
+                let request = new Request(req, body);
                 if (req.method == 'POST') {
-                    let postData: string = await Async.waitPostData(req);
-                    request = new Request(req, postData);
                     for (let rule of this.postRules) {
                         if (rule.pathname.test(req.url)) {
                             if (!await rule.handler(request, res)) {
@@ -50,7 +51,6 @@ export class App {
                         }
                     }
                 } else {
-                    request = new Request(req);
                     for (let rule of this.getRules) {
                         if (rule.pathname.test(req.url)) {
                             if (!await rule.handler(request, res)) {
@@ -61,15 +61,31 @@ export class App {
                 }
             } catch (e) {
                 for (let handler of this.errorHandlers) {
-                    if (!await handler(e, request, res)) {
+                    if (!await handler(e, req, res, request)) {
                         break;
                     }
                 }
             }
             if (!res.finished) {
-                console.log('request has not end yet: ' + request.pathname);
                 res.end();
             }
+            console.log(req.url, res.statusCode);
         }).listen(this.port);
+    }
+
+    waitPostData(request: http.IncomingMessage): Promise<string> {
+        return new Promise((resolve, reject) => {
+            let data = '';
+            request.on('data', (chunk) => {
+                data += chunk;
+                console.log('chunk:' + chunk);
+            });
+            request.on('end', () => {
+                resolve(data);
+            })
+            request.on('error', (err) => {
+                reject(err);
+            })
+        });
     }
 }

@@ -10,6 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^7.0.8",
-    "async-file": "^2.0.2"
+    "express": "^4.15.2"
   }
 }

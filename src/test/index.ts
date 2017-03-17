@@ -1,11 +1,11 @@
 import { App } from '../App';
-import { CommonHandlerStorage } from '../CommonHandlerStorage';
+import { StaticFileHandler } from '../StaticFileHandler';
 
 let app = new App();
 app
-    .get(/\/public\/.*/, CommonHandlerStorage.resource('C:/Users/what/Documents/WebProjects/node-router/', true))
-    .post(/^.*$/, async (request, ses): Promise<boolean> => {
-        console.log(request.postData);
+    .get(/\/public\/.*/, StaticFileHandler.handler('C:/Users/what/Documents/www/node-router/', true))
+    .post(/^.*$/, async (request, res): Promise<boolean> => {
+        res.end(request.postData);
         return true;
     })
     .error(async (err): Promise<boolean> => {
